@@ -90,7 +90,7 @@ async def start_command(client: Client, message: Message):
                                       text=f"<b><i>This File is deleting automatically in {file_auto_delete}. Forward in your Saved Messages..!</i></b>")
 
         # Schedule the file deletion
-        asyncio.create_task(delete_files(codeflix_msgs, client, k, start_command_part))
+        asyncio.create_task(delete_files(codeflix_msgs, client, k, start_command_part, message))
 
         return
     else:
@@ -150,7 +150,7 @@ async def not_joined(client: Client, message: Message):
     )
 
 # Function to handle file deletion and update the "Get File Again" button
-async def delete_files(messages, client, k, start_command_part):
+async def delete_files(messages, client, k, start_command_part, original_message):
     await asyncio.sleep(FILE_AUTO_DELETE)  # Wait for the duration specified in config.py
     
     for msg in messages:
@@ -159,12 +159,14 @@ async def delete_files(messages, client, k, start_command_part):
         except Exception as e:
             print(f"The attempt to delete the media {msg.id} was unsuccessful: {e}")
 
+    # Retrieve the original 'start' URL (reload button)
+    reload_url = f"https://t.me/{client.username}?start={original_message.command[1]}" if original_message.command and len(original_message.command) > 1 else None
+
     # If start_command_part exists, generate the "Get File Again" button
-    if start_command_part:
-        button_url = f"https://t.me/{client.username}?start={start_command_part}"
+    if reload_url:
         keyboard = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ!", url=button_url)]
+                [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ!", url=reload_url)]
             ]
         )
     else:
