@@ -8,9 +8,11 @@ from config import *
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
-codeflixbots = FILE_AUTO_DELETE
-subaru = codeflixbots
-file_auto_delete = humanize.naturaldelta(subaru)
+# File auto-delete time in seconds (Set your desired time in seconds here)
+FILE_AUTO_DELETE = 3600  # Example: 3600 seconds (1 hour)
+
+# Convert the auto-delete time to a human-readable format
+file_auto_delete = humanize.naturaldelta(FILE_AUTO_DELETE)
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -81,11 +83,14 @@ async def start_command(client: Client, message: Message):
                 print(f"Failed to send message: {e}")
                 pass
 
+        # Save the original 'start' command part for the "Get File Again" button
+        start_command_part = text.split(" ", 1)[0] if len(text.split(" ", 1)) > 0 else None
+
         k = await client.send_message(chat_id=message.from_user.id, 
                                       text=f"<b><i>This File is deleting automatically in {file_auto_delete}. Forward in your Saved Messages..!</i></b>")
 
         # Schedule the file deletion
-        asyncio.create_task(delete_files(codeflix_msgs, client, k))
+        asyncio.create_task(delete_files(codeflix_msgs, client, k, start_command_part))
 
         return
     else:
@@ -144,61 +149,8 @@ async def not_joined(client: Client, message: Message):
         disable_web_page_preview=True
     )
 
-@Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
-async def get_users(client: Bot, message: Message):
-    msg = await client.send_message(chat_id=message.chat.id, text=f"Processing...")
-    users = await full_userbase()
-    await msg.edit(f"{len(users)} Users Are Using This Bot")
-
-@Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ADMINS))
-async def send_text(client: Bot, message: Message):
-    if message.reply_to_message:
-        query = await full_userbase()
-        broadcast_msg = message.reply_to_message
-        total = 0
-        successful = 0
-        blocked = 0
-        deleted = 0
-        unsuccessful = 0
-        
-        pls_wait = await message.reply("<i>Broadcasting Message.. This will Take Some Time</i>")
-        for chat_id in query:
-            try:
-                await broadcast_msg.copy(chat_id)
-                successful += 1
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                await broadcast_msg.copy(chat_id)
-                successful += 1
-            except UserIsBlocked:
-                await del_user(chat_id)
-                blocked += 1
-            except InputUserDeactivated:
-                await del_user(chat_id)
-                deleted += 1
-            except Exception as e:
-                print(f"Failed to send message to {chat_id}: {e}")
-                unsuccessful += 1
-                pass
-            total += 1
-        
-        status = f"""<b><u>Broadcast Completed</u></b>
-
-<b>Total Users :</b> <code>{total}</code>
-<b>Successful :</b> <code>{successful}</code>
-<b>Blocked Users :</b> <code>{blocked}</code>
-<b>Deleted Accounts :</b> <code>{deleted}</code>
-<b>Unsuccessful :</b> <code>{unsuccessful}</code>"""
-        
-        return await pls_wait.edit(status)
-
-    else:
-        msg = await message.reply(f"Use This Command As A Reply To Any Telegram Message Without Any Spaces.")
-        await asyncio.sleep(8)
-        await msg.delete()
-
-# Function to handle file deletion
-async def delete_files(messages, client, k):
+# Function to handle file deletion and update the "Get File Again" button
+async def delete_files(messages, client, k, start_command_part):
     await asyncio.sleep(FILE_AUTO_DELETE)  # Wait for the duration specified in config.py
     
     for msg in messages:
@@ -207,11 +159,9 @@ async def delete_files(messages, client, k):
         except Exception as e:
             print(f"The attempt to delete the media {msg.id} was unsuccessful: {e}")
 
-    # Safeguard against k.command being None or having insufficient parts
-    command_part = k.command[1] if k.command and len(k.command) > 1 else None
-
-    if command_part:
-        button_url = f"https://t.me/{client.username}?start={command_part}"
+    # If start_command_part exists, generate the "Get File Again" button
+    if start_command_part:
+        button_url = f"https://t.me/{client.username}?start={start_command_part}"
         keyboard = InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ!", url=button_url)]
