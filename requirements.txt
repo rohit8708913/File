@@ -1,5 +1,6 @@
 https://codeload.github.com/KurimuzonAkuma/pyrogram/zip/refs/heads/dev
-pyrofork==2.3.38
+pyrofork
+pyrogram
 TgCrypto
 pyromod
 schedule
