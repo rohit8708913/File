@@ -1,6 +1,5 @@
 
 pyrofork
-pyrogram
 TgCrypto
 pyromod
 schedule
