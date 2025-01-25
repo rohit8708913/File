@@ -1,3 +1,6 @@
+# Don't Remove Credit @CodeFlix_Bots, @rohit_1888
+# Ask Doubt on telegram @CodeflixSupport
+
 import asyncio
 import os
 import random
@@ -30,7 +33,7 @@ async def start_command(client: Client, message: Message):
             pass
 
     verify_status = await get_verify_status(id)
-    
+
     # If TOKEN is enabled, handle verification logic
     if TOKEN:
         if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
@@ -44,22 +47,22 @@ async def start_command(client: Client, message: Message):
             if verify_status["link"] == "":
                 reply_markup = None
             return await message.reply(
-                "Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}.",
+                f"Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}",
                 reply_markup=reply_markup,
                 protect_content=False,
                 quote=True
             )
-        
+
         if not verify_status['is_verified']:
             token = ''.join(random.choices(rohit.ascii_letters + rohit.digits, k=10))
             await update_verify_status(id, verify_token=token, link="")
             link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
             btn = [
-                [InlineKeyboardButton("Click here 👍", url=link)],
-                [InlineKeyboardButton('How to use the bot 👆', url=TUT_VID)]
+                [InlineKeyboardButton("• ᴏᴘᴇɴ ʟɪɴᴋ •", url=link)],
+                [InlineKeyboardButton('• ʜᴏᴡ ᴛᴏ ᴏᴘᴇɴ ʟɪɴᴋ •', url=TUT_VID)]
             ]
             return await message.reply(
-                f"Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}.",
+                f"<b>Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}</b>",
                 reply_markup=InlineKeyboardMarkup(btn),
                 protect_content=False,
                 quote=True
@@ -149,7 +152,7 @@ async def start_command(client: Client, message: Message):
                 ) if reload_url else None
 
                 await notification_msg.edit(
-                    "<b><i>Your video/file has been successfully deleted ✅</i></b>",
+                    "<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!\n\nᴄʟɪᴄᴋ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ʏᴏᴜʀ ᴅᴇʟᴇᴛᴇᴅ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ 👇</b>",
                     reply_markup=keyboard
                 )
             except Exception as e:
@@ -163,8 +166,9 @@ async def start_command(client: Client, message: Message):
                 ]
             ]
         )
-        await message.reply_text(
-            text=START_MSG.format(
+        await message.reply_photo(
+            photo=START_PIC,
+            caption=START_MSG.format(
                 first=message.from_user.first_name,
                 last=message.from_user.last_name,
                 username=None if not message.from_user.username else '@' + message.from_user.username,
@@ -179,7 +183,8 @@ async def start_command(client: Client, message: Message):
 
 
 #=====================================================================================##
-#@rohit_1888 on Tg
+# Don't Remove Credit @CodeFlix_Bots, @rohit_1888
+# Ask Doubt on telegram @CodeflixSupport
 
 @Bot.on_message(filters.command('start') & filters.private)
 async def not_joined(client: Client, message: Message):
