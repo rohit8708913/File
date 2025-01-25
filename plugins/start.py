@@ -182,17 +182,51 @@ async def start_command(client: Client, message: Message):
 
 @Bot.on_message(filters.command('start') & filters.private)
 async def not_joined(client: Client, message: Message):
-    buttons = [
-        [
-            InlineKeyboardButton(text="ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=client.invitelink),
-            InlineKeyboardButton(text="ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=client.invitelink2),
-        ]
-    ]
+    user_id = message.from_user.id
+
+    # Check subscription status
+    sub1 = await is_subscribed1(None, client, message)
+    sub2 = await is_subscribed2(None, client, message)
+    sub3 = await is_subscribed3(None, client, message)
+    sub4 = await is_subscribed4(None, client, message)
+
+    buttons = []
+
+    if sub1 and not sub2 and not sub3:
+        # User subscribed to 1, show buttons for 2 and 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink3)])
+    elif sub2 and not sub1 and not sub3:
+        # User subscribed to 2, show buttons for 1 and 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink3)])
+    elif sub3 and not sub1 and not sub2:
+        # User subscribed to 3, show buttons for 1 and 2
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink2)])
+    elif not sub1 and not sub2 and not sub3:
+        # User subscribed to none, show all three buttons
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink3)])
+    elif sub1 and sub2 and not sub3:
+        # User subscribed to 1 and 2, show button for 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink3)])
+    elif sub1 and sub3 and not sub2:
+        # User subscribed to 1 and 3, show button for 2
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink2)])
+    elif sub2 and sub3 and not sub1:
+        # User subscribed to 2 and 3, show button for 1
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ •", url=client.invitelink)])
+    elif sub1 and sub2 and sub3:
+        # All subscriptions satisfied, no join buttons
+        pass
+
     try:
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text='ʀᴇʟᴏᴀᴅ',
+                    text='• ᴛʀʏ ᴀɢᴀɪɴ •',
                     url=f"https://t.me/{client.username}?start={message.command[1]}"
                 )
             ]
@@ -203,14 +237,15 @@ async def not_joined(client: Client, message: Message):
     await message.reply_photo(
         photo=FORCE_PIC,
         caption=FORCE_MSG.format(
-            first=message.from_user.first_name,
-            last=message.from_user.last_name,
-            username=None if not message.from_user.username else '@' + message.from_user.username,
-            mention=message.from_user.mention,
-            id=message.from_user.id
-        ),
-        reply_markup=InlineKeyboardMarkup(buttons),
-message_effect_id=5104841245755180586)
+        first=message.from_user.first_name,
+        last=message.from_user.last_name,
+        username=None if not message.from_user.username else '@' + message.from_user.username,
+        mention=message.from_user.mention,
+        id=message.from_user.id
+    ),
+    reply_markup=InlineKeyboardMarkup(buttons),
+    message_effect_id=5104841245755180586  # Add the effect ID here
+)
 
 
 #=====================================================================================##
