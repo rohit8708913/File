@@ -5,7 +5,6 @@ import asyncio
 import os
 import random
 import sys
-import logging
 import time
 import string
 import string as rohit
@@ -13,9 +12,8 @@ import humanize
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from pyrogram.enums import ChatMemberStatus
-from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
+from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
 from bot import Bot
 from config import *
 from helper_func import *
@@ -24,12 +22,6 @@ from database.database import *
 # File auto-delete time in seconds (Set your desired time in seconds here)
 FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
 TUT_VID = f"{TUT_VID}"
-
-
-
-logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(message)s')
-
-
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed1 & subscribed2 & subscribed3 & subscribed4)
 async def start_command(client: Client, message: Message):
@@ -169,24 +161,27 @@ async def start_command(client: Client, message: Message):
     else:
         reply_markup = InlineKeyboardMarkup(
             [
-                [
-                    InlineKeyboardButton('⚡️ Movies', url='https://t.me/+QVewP06XCPFiYWZl'),
-                    InlineKeyboardButton('🍁 Series', url='https://t.me/webseries_flix')
-                ]
+
+    [
+                    InlineKeyboardButton("⚡️ ᴀʙᴏᴜᴛ", callback_data = "about"),
+                    InlineKeyboardButton('🍁 sᴇʀɪᴇsғʟɪx', url='https://t.me/Team_Netflix/40')
+
+    ]
             ]
         )
         await message.reply_photo(
-                photo=START_PIC,
-                caption=START_MSG.format(
-                    first=message.from_user.first_name,
-                    last=message.from_user.last_name,
-                    username=None if not message.from_user.username else '@' + message.from_user.username,
-                    mention=message.from_user.mention,
-                    id=message.from_user.id
-                ),
-                reply_markup=reply_markup#,
+            photo=START_PIC,
+            caption=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup#,
             #message_effect_id=5104841245755180586  # 🔥
         )
+        return
 
 
 
@@ -198,51 +193,105 @@ async def start_command(client: Client, message: Message):
 async def not_joined(client: Client, message: Message):
     user_id = message.from_user.id
 
-    # Define channel links dynamically
-    channels = {
-        "Channel 1": client.invitelink1,
-        "Channel 2": client.invitelink2,
-        "Channel 3": client.invitelink3,
-        "Channel 4": client.invitelink4
-    }
+    # Check subscription status
+    sub1 = await is_subscribed1(None, client, message)
+    sub2 = await is_subscribed2(None, client, message)
+    sub3 = await is_subscribed3(None, client, message)
+    sub4 = await is_subscribed4(None, client, message)
 
-    # Check subscriptions
-    subscriptions = []
-    for idx, (channel_name, invite_link) in enumerate(channels.items(), start=1):
-        subscribed = await is_subscribedX(client, f"FORCE_SUB_CHANNEL{idx}", user_id)
-        if not subscribed:
-            subscriptions.append((channel_name, invite_link))
-
-    # Build buttons
     buttons = []
-    for channel_name, invite_link in subscriptions:
-        buttons.append([InlineKeyboardButton(text=f"• ᴊᴏɪɴ {channel_name} •", url=invite_link)])
 
-    # Add retry button
+    # Check all subscription possibilities
+    if not sub1 and not sub2 and not sub3 and not sub4:
+        # User subscribed to none, show all four buttons
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub1 and not sub2 and not sub3 and not sub4:
+        # User subscribed to 1, show buttons for 2, 3, and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub2 and not sub1 and not sub3 and not sub4:
+        # User subscribed to 2, show buttons for 1, 3, and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub3 and not sub1 and not sub2 and not sub4:
+        # User subscribed to 3, show buttons for 1, 2, and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub4 and not sub1 and not sub2 and not sub3:
+        # User subscribed to 4, show buttons for 1, 2, and 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+    elif sub1 and sub2 and not sub3 and not sub4:
+        # User subscribed to 1 and 2, show buttons for 3 and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub1 and sub3 and not sub2 and not sub4:
+        # User subscribed to 1 and 3, show buttons for 2 and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub1 and sub4 and not sub2 and not sub3:
+        # User subscribed to 1 and 4, show buttons for 2 and 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+    elif sub2 and sub3 and not sub1 and not sub4:
+        # User subscribed to 2 and 3, show buttons for 1 and 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub2 and sub4 and not sub1 and not sub3:
+        # User subscribed to 2 and 4, show buttons for 1 and 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+    elif sub3 and sub4 and not sub1 and not sub2:
+        # User subscribed to 3 and 4, show buttons for 1 and 2
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+    elif sub1 and sub2 and sub3 and not sub4:
+        # User subscribed to 1, 2, and 3, show button for 4
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 4 •", url=client.invitelink4)])
+    elif sub1 and sub2 and sub4 and not sub3:
+        # User subscribed to 1, 2, and 4, show button for 3
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 3 •", url=client.invitelink3)])
+    elif sub1 and sub3 and sub4 and not sub2:
+        # User subscribed to 1, 3, and 4, show button for 2
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 2 •", url=client.invitelink2)])
+    elif sub2 and sub3 and sub4 and not sub1:
+        # User subscribed to 2, 3, and 4, show button for 1
+        buttons.append([InlineKeyboardButton(text="• ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ 1 •", url=client.invitelink1)])
+    elif sub1 and sub2 and sub3 and sub4:
+        # All subscriptions satisfied, no join buttons
+        pass
+
     try:
-        buttons.append([
-            InlineKeyboardButton(
-                text="• ᴛʀʏ ᴀɢᴀɪɴ •",
-                url=f"https://t.me/{client.username}?start={message.command[1]}"
-            )
-        ])
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text='• ᴛʀʏ ᴀɢᴀɪɴ •',
+                    url=f"https://t.me/{client.username}?start={message.command[1]}"
+                )
+            ]
+        )
     except IndexError:
         pass
 
-    # Handle all channels already joined
-    if not subscriptions:
-        await message.reply_photo(
-            photo=FORCE_PIC,
-            caption=FORCE_MSG.format(
-                first=message.from_user.first_name,
-                last=message.from_user.last_name,
-                username=None if not message.from_user.username else '@' + message.from_user.username,
-                mention=message.from_user.mention,
-                id=message.from_user.id
-            ),
-            reply_markup=InlineKeyboardMarkup(buttons)
-        )
-    
+    await message.reply_photo(
+        photo=FORCE_PIC,
+        caption=FORCE_MSG.format(
+        first=message.from_user.first_name,
+        last=message.from_user.last_name,
+        username=None if not message.from_user.username else '@' + message.from_user.username,
+        mention=message.from_user.mention,
+        id=message.from_user.id
+    ),
+    reply_markup=InlineKeyboardMarkup(buttons)#,
+    #message_effect_id=5104841245755180586  # Add the effect ID here
+)
 
 
 #=====================================================================================##
