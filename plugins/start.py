@@ -44,7 +44,7 @@ async def start_command(client: Client, message: Message):
             if verify_status["link"] == "":
                 reply_markup = None
             return await message.reply(
-                "Your token has been successfully verified and is valid for the next 24 hours.",
+                "Your token has been successfully verified and is valid for the next {get_exp_time(VERIFY_EXPIRE)}.",
                 reply_markup=reply_markup,
                 protect_content=False,
                 quote=True
@@ -59,7 +59,7 @@ async def start_command(client: Client, message: Message):
                 [InlineKeyboardButton('How to use the bot 👆', url=TUT_VID)]
             ]
             return await message.reply(
-                f"Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for 24 hours.",
+                f"Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}.",
                 reply_markup=InlineKeyboardMarkup(btn),
                 protect_content=False,
                 quote=True
