@@ -132,10 +132,11 @@ async def start_command(client: Client, message: Message):
             await asyncio.sleep(FILE_AUTO_DELETE)
 
             for snt_msg in codeflix_msgs:    
-                try:    
-                    await snt_msg.delete()  
-                except Exception as e:
-                    print(f"Error deleting message {snt_msg.id}: {e}")
+                if snt_msg:
+                    try:    
+                        await snt_msg.delete()  
+                    except Exception as e:
+                        print(f"Error deleting message {snt_msg.id}: {e}")
 
             try:
                 reload_url = (
