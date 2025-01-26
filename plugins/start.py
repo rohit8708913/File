@@ -18,6 +18,10 @@ from bot import Bot
 from config import *
 from helper_func import *
 from database.database import *
+import logging 
+
+# Enable logging
+logging.basicConfig(level=logging.INFO)
 
 # File auto-delete time in seconds (Set your desired time in seconds here)
 FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
