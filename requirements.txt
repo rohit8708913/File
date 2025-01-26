@@ -1,6 +1,6 @@
 #https://codeload.github.com/KurimuzonAkuma/pyrogram/zip/refs/heads/dev
 # --- For-Bot-Working --------- #
-pyrogram
+
 pyrofork==2.3.38
 TgCrypto
 pyromod==1.5
