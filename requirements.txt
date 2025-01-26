@@ -1,4 +1,6 @@
-https://codeload.github.com/KurimuzonAkuma/pyrogram/zip/refs/heads/dev
+#https://codeload.github.com/KurimuzonAkuma/pyrogram/zip/refs/heads/dev
+pyrofork 
+pyrogram
 TgCrypto
 pyromod
 humanize
