@@ -1,9 +1,9 @@
 #https://codeload.github.com/KurimuzonAkuma/pyrogram/zip/refs/heads/dev
-pyrofork 
+# --- For-Bot-Working --------- #
 pyrogram
+pyrofork==2.3.38
 TgCrypto
-pyromod
-humanize
+pyromod==1.5
 schedule
 APscheduler
 # --- For-Database ------------ #
