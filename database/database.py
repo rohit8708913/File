@@ -1,6 +1,7 @@
 
 
 import motor, asyncio
+import logging 
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -8,6 +9,8 @@ dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
 database = dbclient[DB_NAME]
 
 user_data = database['users']
+
+logging.basicConfig(level=logging.INFO)
 
 default_verify = {
     'is_verified': False,
