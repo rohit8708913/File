@@ -26,65 +26,58 @@ logging.basicConfig(level=logging.INFO)
 FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
 TUT_VID = f"{TUT_VID}"
 
+
 @Bot.on_message(filters.command('start') & filters.private & subscribed1 & subscribed2 & subscribed3 & subscribed4)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
     free_count = await db.check_free_usage(id)
-    free_limit = 3
-    
+    free_limit = 3  # Users can access 3 times without verification
+
     if not await present_user(id):
         try:
             await add_user(id)
         except:
             pass
 
-   if free_count < free_limit:
-        await db.update_free_usage(id)  # Increment
-
-    # Check if user is an admin and treat them as verified
-    if id in ADMINS:
-        verify_status = {
-            'is_verified': True,
-            'verify_token': None,  # Admins don't need a token
-            'verified_time': time.time(),
-            'link': ""
-        }
+    # If user hasn't exceeded free limit, increment usage and let them proceed
+    if free_count < free_limit:
+        await db.update_free_usage(id)  # Increment free usage count
     else:
-        verify_status = await get_verify_status(id)
+        # Check verification status
+        if id in ADMINS:
+            verify_status = {'is_verified': True, 'verify_token': None, 'verified_time': time.time(), 'link': ""}
+        else:
+            verify_status = await get_verify_status(id)
 
-        # If TOKEN is enabled, handle verification logic
-        if TOKEN:
-            if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-                await update_verify_status(id, is_verified=False)
+            if TOKEN:
+                # Check if verification expired
+                if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
+                    await update_verify_status(id, is_verified=False)
 
-            if "verify_" in message.text:
-                _, token = message.text.split("_", 1)
-                if verify_status['verify_token'] != token:
-                    return await message.reply("Your token is invalid or expired. Try again by clicking /start.")
-                await update_verify_status(id, is_verified=True, verified_time=time.time())
-                if verify_status["link"] == "":
-                    reply_markup = None
-                return await message.reply(
-                    f"Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}",
-                    reply_markup=reply_markup,
-                    protect_content=False,
-                    quote=True
-                )
+                if "verify_" in message.text:
+                    _, token = message.text.split("_", 1)
+                    if verify_status['verify_token'] != token:
+                        return await message.reply("Your token is invalid or expired. Try again by clicking /start.")
+                    
+                    await update_verify_status(id, is_verified=True, verified_time=time.time())
+                    return await message.reply(f"Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}")
 
-            if not verify_status['is_verified']:
-                token = ''.join(random.choices(rohit.ascii_letters + rohit.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
-                btn = [
-                    [InlineKeyboardButton("• ᴏᴘᴇɴ ʟɪɴᴋ •", url=link)],
-                    [InlineKeyboardButton('• ʜᴏᴡ ᴛᴏ ᴏᴘᴇɴ ʟɪɴᴋ •', url=TUT_VID)]
-                ]
-                return await message.reply(
-                    f"<b>Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}</b>",
-                    reply_markup=InlineKeyboardMarkup(btn),
-                    protect_content=False,
-                    quote=True
-                )
+                # If user is not verified, generate a new token
+                if not verify_status['is_verified']:
+                    token = ''.join(random.choices(rohit.ascii_letters + rohit.digits, k=10))
+                    await update_verify_status(id, verify_token=token, link="")
+                    link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
+                    
+                    btn = [
+                        [InlineKeyboardButton("• ᴏᴘᴇɴ ʟɪɴᴋ •", url=link)],
+                        [InlineKeyboardButton('• ʜᴏᴡ ᴛᴏ ᴏᴘᴇɴ ʟɪɴᴋ •', url=TUT_VID)]
+                    ]
+                    
+                    return await message.reply(
+                        f"<b>Your free limit is over. Please verify to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}</b>",
+                        reply_markup=InlineKeyboardMarkup(btn),
+                        protect_content=False
+                    )
 
     # Handle normal message flow
     text = message.text
@@ -176,16 +169,10 @@ async def start_command(client: Client, message: Message):
             except Exception as e:
                 print(f"Error updating notification with 'Get File Again' button: {e}")
     else:
-        reply_markup = InlineKeyboardMarkup(
-            [
-
-    [
-                    InlineKeyboardButton("𝗔𝗯𝗼𝘂𝘁", callback_data = "about"),
-                    InlineKeyboardButton('𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀', url='https://t.me/nova_flix')
-
-    ]
-            ]
-        )
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("𝗔𝗯𝗼𝘂𝘁", callback_data="about"),
+             InlineKeyboardButton('𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀', url='https://t.me/nova_flix')]
+        ])
         await message.reply_photo(
             photo=START_PIC,
             caption=START_MSG.format(
@@ -195,8 +182,8 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=reply_markup#,
-            #message_effect_id=5104841245755180586  # 🔥
+            reply_markup=reply_markup,
+            message_effect_id=5104841245755180586  # 🔥
         )
         return
 
