@@ -79,3 +79,18 @@ async def reset_free_usage(user_id):
                 )
     except Exception as e:
         logging.error(f"Error resetting free usage for user {user_id}: {e}")
+
+async def check_free_usage(user_id):
+    try:
+        # Fetch user data from the database
+        data = await user_data.find_one({"user_id": user_id})
+
+        if not data:
+            return 0  # If no data exists, assume count is 0 (new user)
+
+        # Ensure the count is properly retrieved
+        usage_count = int(data.get("count", 0))  # Default to 0 if missing
+        return usage_count  # Return actual usage count
+    except Exception as e:
+        logging.error(f"Error checking free usage for user {user_id}: {e}")
+        return 0  # Default to 0 if an error occurs
