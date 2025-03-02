@@ -30,7 +30,7 @@ TUT_VID = f"{TUT_VID}"
 @Bot.on_message(filters.command('start') & filters.private & subscribed1 & subscribed2 & subscribed3 & subscribed4)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
-    free_count = await db.check_free_usage(id)
+    free_count = await check_free_usage(id)
     free_limit = 3  # Users can access 3 times without verification
 
     if not await present_user(id):
@@ -41,7 +41,7 @@ async def start_command(client: Client, message: Message):
 
     # If user hasn't exceeded free limit, increment usage and let them proceed
     if free_count < free_limit:
-        await db.update_free_usage(id)  # Increment free usage count
+        await update_free_usage(id)  # Increment free usage count
     else:
         # Check verification status
         if id in ADMINS:
