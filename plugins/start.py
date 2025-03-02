@@ -32,49 +32,55 @@ async def start_command(client: Client, message: Message):
     if not await present_user(id):
         try:
             await add_user(id)
-        except Exception as e:
-            print(f"Error adding user: {e}")
+        except:
+            pass
 
-    verify_status = await get_verify_status(id)
-    
-    # Handle Token Verification
-    if TOKEN:
-        if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-            await update_verify_status(id, is_verified=False)
+    # Check if user is an admin and treat them as verified
+    if id in ADMINS:
+        verify_status = {
+            'is_verified': True,
+            'verify_token': None,  # Admins don't need a token
+            'verified_time': time.time(),
+            'link': ""
+        }
+    else:
+        verify_status = await get_verify_status(id)
 
-        if "verify_" in message.text:
-            _, token = message.text.split("_", 1)
-            if verify_status['verify_token'] != token:
-                return await message.reply("Your token is invalid or expired. Try again by clicking /start.")
-            
-            await update_verify_status(id, is_verified=True, verified_time=time.time(), usage_count=0)
-            return await message.reply(
-                f"Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}",
-                protect_content=False,
-                quote=True
-            )
+        # If TOKEN is enabled, handle verification logic
+        if TOKEN:
+            if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
+                await update_verify_status(id, is_verified=False)
 
-        if not verify_status['is_verified']:
-            usage_count = verify_status.get('usage_count', 0)
+            if "verify_" in message.text:
+                _, token = message.text.split("_", 1)
+                if verify_status['verify_token'] != token:
+                    return await message.reply("Your token is invalid or expired. Try again by clicking /start.")
+                await update_verify_status(id, is_verified=True, verified_time=time.time())
+                if verify_status["link"] == "":
+                    reply_markup = None
+                return await message.reply(
+                    f"Your token has been successfully verified and is valid for {get_exp_time(VERIFY_EXPIRE)}",
+                    reply_markup=reply_markup,
+                    protect_content=False,
+                    quote=True
+                )
 
-            if usage_count < 3:
-                await update_verify_status(id, usage_count=usage_count + 1)
-            else:
+            if not verify_status['is_verified']:
                 token = ''.join(random.choices(rohit.ascii_letters + rohit.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="", usage_count=0)
+                await update_verify_status(id, verify_token=token, link="")
                 link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("• ᴏᴘᴇɴ ʟɪɴᴋ •", url=link)],
                     [InlineKeyboardButton('• ʜᴏᴡ ᴛᴏ ᴏᴘᴇɴ ʟɪɴᴋ •', url=TUT_VID)]
                 ]
                 return await message.reply(
-                    f"<b>Your free access limit has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}</b>",
+                    f"<b>Your token has expired. Please refresh your token to continue.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. Passing one ad allows you to use the bot for {get_exp_time(VERIFY_EXPIRE)}</b>",
                     reply_markup=InlineKeyboardMarkup(btn),
                     protect_content=False,
                     quote=True
                 )
 
-    # Normal bot functionality (handles file access, media, etc.)
+    # Handle normal message flow
     text = message.text
     if len(text) > 7:
         try:
@@ -131,6 +137,7 @@ async def start_command(client: Client, message: Message):
                 codeflix_msgs.append(copied_msg)
             except Exception as e:
                 print(f"Failed to send message: {e}")
+                pass
 
         if FILE_AUTO_DELETE > 0:
             notification_msg = await message.reply(
@@ -153,11 +160,11 @@ async def start_command(client: Client, message: Message):
                     else None
                 )
                 keyboard = InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("Get File Again!", url=reload_url)]]
+                    [[InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ!", url=reload_url)]]
                 ) if reload_url else None
 
                 await notification_msg.edit(
-                    "<b>Your video/file has been successfully deleted!\n\nClick below to get your deleted file again 👇</b>",
+                    "<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!\n\nᴄʟɪᴄᴋ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ʏᴏᴜʀ ᴅᴇʟᴇᴛᴇᴅ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ 👇</b>",
                     reply_markup=keyboard
                 )
             except Exception as e:
@@ -165,8 +172,12 @@ async def start_command(client: Client, message: Message):
     else:
         reply_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("⚡️ About", callback_data="about"),
-                 InlineKeyboardButton('🍁 SeriesFlix', url='https://t.me/Team_Netflix/40')]
+
+    [
+                    InlineKeyboardButton("𝗔𝗯𝗼𝘂𝘁", callback_data = "about"),
+                    InlineKeyboardButton('𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀', url='https://t.me/nova_flix')
+
+    ]
             ]
         )
         await message.reply_photo(
@@ -178,8 +189,10 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=reply_markup
+            reply_markup=reply_markup#,
+            #message_effect_id=5104841245755180586  # 🔥
         )
+        return
 
 
 
