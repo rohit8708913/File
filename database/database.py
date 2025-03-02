@@ -53,3 +53,29 @@ async def full_userbase():
 async def del_user(user_id: int):
     await user_data.delete_one({'_id': user_id})
     return
+
+# **Update Free Usage Count**
+async def update_free_usage(user_id):
+    try:
+        # Check if user exists in DB
+        data = await user_data.find_one({"user_id": user_id})
+
+        if not data:
+            # If user doesn't exist, create new entry with count = 1
+            await user_data.insert_one({"user_id": user_id, "count": 1, "last_reset": time.time()})
+        else:
+            # Increment count properly
+            await user_data.update_one({"user_id": user_id}, {"$inc": {"count": 1}})
+    except Exception as e:
+        logging.error(f"Error incrementing free usage for user {user_id}: {e}")
+
+    # **Reset Free Usage After 24 Hours**
+async def reset_free_usage(user_id):
+    try:
+        data = await user_data.find_one({"user_id": user_id})
+        if data and (time.time() - data.get("last_reset", 0) > 86400):
+            await user_data.update_one(
+                {"user_id": user_id}, {"$set": {"count": 0, "last_reset": time.time()}}
+                )
+    except Exception as e:
+        logging.error(f"Error resetting free usage for user {user_id}: {e}")
