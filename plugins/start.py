@@ -33,32 +33,20 @@ TUT_VID = f"{TUT_VID}"
 user_links = {}
 pending_users = {}
 
-@Bot.on_message(filters.command("download") & filters.private)
-async def ask_for_link(bot, message: Message):
-    user_id = message.from_user.id
-    pending_users[user_id] = True
-
-    sent = await message.reply("Send the video link within 30 seconds...")
-
-    # Wait 30 seconds
-    await asyncio.sleep(30)
-
-    # If user still hasn't sent a link, expire it
-    if pending_users.get(user_id):
-        pending_users.pop(user_id, None)
-        await sent.edit("⏰ Time's up! Please send /download again to start.")
-
 @Bot.on_message(filters.private & filters.text & ~filters.command("download"))
 async def fetch_formats(bot, message: Message):
     user_id = message.from_user.id
-
-    if not pending_users.get(user_id):
-        return  # Ignore unrelated messages
-
     text = message.text.strip()
+
+    # If user is not in "waiting" state and hasn't used /download, ignore
+    if user_id not in pending_users and user_id not in user_links:
+        return await message.reply("Please use /download first before sending a link.")
+
+    # If it's not a URL, ignore
     if not text.startswith("http"):
         return await message.reply("Please send a valid video URL.")
 
+    # Clear pending state and store URL
     pending_users.pop(user_id, None)
     user_links[user_id] = text
 
@@ -90,7 +78,7 @@ async def fetch_formats(bot, message: Message):
             reply_markup=InlineKeyboardMarkup(buttons)
         )
 
-        # Expire download buttons after 30 seconds
+        # Expire after 30 seconds
         await asyncio.sleep(30)
         if msg.reply_markup:
             await msg.edit("Download session expired. Please send /download again.")
