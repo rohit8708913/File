@@ -30,22 +30,42 @@ FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
 TUT_VID = f"{TUT_VID}"
 
 
+user_links = {}
+pending_users = {}
+
 @Bot.on_message(filters.command("download") & filters.private)
-async def ask_for_link(_, message: Message):
-    await message.reply("Send me the video link you want to download.")
+async def ask_for_link(bot, message: Message):
+    user_id = message.from_user.id
+    pending_users[user_id] = True
+
+    sent = await message.reply("Send the video link within 30 seconds...")
+
+    # Wait 30 seconds
+    await asyncio.sleep(30)
+
+    # If user still hasn't sent a link, expire it
+    if pending_users.get(user_id):
+        pending_users.pop(user_id, None)
+        await sent.edit("⏰ Time's up! Please send /download again to start.")
 
 @Bot.on_message(filters.private & filters.text & ~filters.command("download"))
-async def fetch_formats(_, message: Message):
-    if not message.text.startswith("http"):
-        return
+async def fetch_formats(bot, message: Message):
+    user_id = message.from_user.id
 
-    url = message.text
-    user_links[message.from_user.id] = url
+    if not pending_users.get(user_id):
+        return  # Ignore unrelated messages
+
+    text = message.text.strip()
+    if not text.startswith("http"):
+        return await message.reply("Please send a valid video URL.")
+
+    pending_users.pop(user_id, None)
+    user_links[user_id] = text
 
     msg = await message.reply("Fetching available qualities...")
 
     try:
-        cmd = ["yt-dlp", "-F", url]
+        cmd = ["yt-dlp", "-F", text]
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout
 
@@ -65,7 +85,16 @@ async def fetch_formats(_, message: Message):
             for code, quality in formats
         ]
 
-        await msg.edit("Choose a quality to download:", reply_markup=InlineKeyboardMarkup(buttons))
+        await msg.edit(
+            "Choose a quality to download (valid for 30 seconds):",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+
+        # Expire download buttons after 30 seconds
+        await asyncio.sleep(30)
+        if msg.reply_markup:
+            await msg.edit("Download session expired. Please send /download again.")
+            user_links.pop(user_id, None)
 
     except Exception as e:
         await msg.edit(f"Error while fetching formats:\n{e}")
