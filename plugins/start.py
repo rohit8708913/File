@@ -18,6 +18,9 @@ from config import *
 from helper_func import *
 from database.database import *
 import logging 
+import subprocess
+import uuid
+
 
 # Enable logging
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +28,49 @@ logging.basicConfig(level=logging.INFO)
 # File auto-delete time in seconds (Set your desired time in seconds here)
 FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
 TUT_VID = f"{TUT_VID}"
+
+
+
+@Client.on_message(filters.command("download") & filters.private)
+async def ask_video_link(bot, message: Message):
+    await message.reply("Send me the video link to fetch available qualities.")
+
+# Temporary in-memory store (you can replace with DB)
+user_links = {}
+
+@Client.on_message(filters.private & filters.text & ~filters.command(["download"]))
+async def fetch_formats(bot, message: Message):
+    if not message.text.startswith("http"):
+        return
+
+    user_links[message.from_user.id] = message.text
+    msg = await message.reply("Fetching available formats...")
+
+    try:
+        cmd = ["yt-dlp", "-F", message.text]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        output = result.stdout
+
+        formats = []
+        for line in output.splitlines():
+            if "video only" in line or "video" in line:
+                parts = line.split()
+                if len(parts) > 2 and parts[0].isdigit():
+                    format_code = parts[0]
+                    resolution = parts[-1]
+                    formats.append((format_code, resolution))
+
+        if not formats:
+            return await msg.edit("No downloadable formats found.")
+
+        buttons = [
+            [InlineKeyboardButton(f"{res} ({code})", callback_data=f"download|{code}")]
+            for code, res in formats
+        ]
+
+        await msg.edit("Choose a quality to download:", reply_markup=InlineKeyboardMarkup(buttons))
+    except Exception as e:
+        await msg.edit(f"Error while fetching formats:\n{e}")
 
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed1 & subscribed2 & subscribed3 & subscribed4)
