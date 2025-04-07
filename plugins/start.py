@@ -30,45 +30,43 @@ FILE_AUTO_DELETE = TIME  # Example: 3600 seconds (1 hour)
 TUT_VID = f"{TUT_VID}"
 
 
+@Bot.on_message(filters.command("download") & filters.private)
+async def ask_for_link(_, message: Message):
+    await message.reply("Send me the video link you want to download.")
 
-@Client.on_message(filters.command("download") & filters.private)
-async def ask_video_link(bot, message: Message):
-    await message.reply("Send me the video link to fetch available qualities.")
-
-# Temporary in-memory store (you can replace with DB)
-user_links = {}
-
-@Client.on_message(filters.private & filters.text & ~filters.command(["download"]))
-async def fetch_formats(bot, message: Message):
+@Bot.on_message(filters.private & filters.text & ~filters.command("download"))
+async def fetch_formats(_, message: Message):
     if not message.text.startswith("http"):
         return
 
-    user_links[message.from_user.id] = message.text
-    msg = await message.reply("Fetching available formats...")
+    url = message.text
+    user_links[message.from_user.id] = url
+
+    msg = await message.reply("Fetching available qualities...")
 
     try:
-        cmd = ["yt-dlp", "-F", message.text]
+        cmd = ["yt-dlp", "-F", url]
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout
 
         formats = []
         for line in output.splitlines():
-            if "video only" in line or "video" in line:
+            if "video" in line and line.split()[0].isdigit():
                 parts = line.split()
-                if len(parts) > 2 and parts[0].isdigit():
-                    format_code = parts[0]
-                    resolution = parts[-1]
-                    formats.append((format_code, resolution))
+                code = parts[0]
+                quality = parts[-1]
+                formats.append((code, quality))
 
         if not formats:
-            return await msg.edit("No downloadable formats found.")
+            return await msg.edit("No video formats found.")
 
         buttons = [
-            [InlineKeyboardButton(f"{res} ({code})", callback_data=f"download|{code}")]
-            for code, res in formats
+            [InlineKeyboardButton(f"{quality} ({code})", callback_data=f"download|{code}")]
+            for code, quality in formats
         ]
 
         await msg.edit("Choose a quality to download:", reply_markup=InlineKeyboardMarkup(buttons))
+
     except Exception as e:
         await msg.edit(f"Error while fetching formats:\n{e}")
 
